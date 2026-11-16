@@ -3,93 +3,150 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Facilitador — Zoom In, Zoom Out</title>
+  <meta name="theme-color" content="#142338" />
+  <meta name="description" content="Painel do facilitador da dinâmica Zoom In, Zoom Out — Encontro dos Instrutores." />
+  <title>Facilitador | Zoom In, Zoom Out — Encontro dos Instrutores</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body>
+<body class="host-page">
   <header class="topbar">
-    <div class="brand">
-      <span>🔍 Zoom In, Zoom Out</span>
-      <span class="badge badge-accent">PAINEL DO FACILITADOR</span>
-    </div>
+    <a class="brand" href="index.html" aria-label="Zoom In, Zoom Out — Encontro dos Instrutores">
+      <span class="brand-mark" aria-hidden="true">🔍</span>
+      <span class="brand-copy">
+        <span class="brand-event">ENCONTRO DOS INSTRUTORES</span>
+        <span class="brand-name">Zoom In, Zoom Out</span>
+      </span>
+      <span class="badge badge-accent">FACILITADOR</span>
+    </a>
 
-    <nav class="room-tabs" aria-label="Seleção de Salas">
-      <button type="button" class="room-tab active" data-room="sala-1">Sala 1</button>
-      <button type="button" class="room-tab" data-room="sala-2">Sala 2</button>
-      <button type="button" class="room-tab" data-room="sala-3">Sala 3</button>
-      <button type="button" class="room-tab" data-room="sala-4">Sala 4</button>
+    <nav class="room-tabs" aria-label="Selecionar sala">
+      <button type="button" class="room-tab active" data-room="sala-1" aria-pressed="true">Sala 1</button>
+      <button type="button" class="room-tab" data-room="sala-2" aria-pressed="false">Sala 2</button>
+      <button type="button" class="room-tab" data-room="sala-3" aria-pressed="false">Sala 3</button>
+      <button type="button" class="room-tab" data-room="sala-4" aria-pressed="false">Sala 4</button>
     </nav>
   </header>
 
-  <main class="container">
-    <section class="card">
-      <div class="card-header">
-        <div class="card-title-group">
-          <div class="card-title-row">
-            <h1 class="card-title" id="roomTitleDisplay">Controle da SALA-1</h1>
-            <span class="badge badge-status waiting" id="roomStatusBadge">Aguardando início</span>
-            <span class="badge badge-neutral" id="playersCountBadge">0 jogadores</span>
-          </div>
-          <p class="card-subtitle">Gerencie a distribuição de cartas, acompanhe o posicionamento e revele o gabarito.</p>
-        </div>
+  <main class="container host-container">
+    <section class="page-intro">
+      <div>
+        <p class="eyebrow">DINÂMICA COLABORATIVA</p>
+        <h1>Uma questão de perspectiva.</h1>
+        <p class="intro-copy">Acompanhe a equipe, organize a sequência e conduza a revelação das imagens.</p>
+      </div>
+      <div class="intro-mark" aria-hidden="true">↗</div>
+    </section>
 
-        <div class="action-toolbar">
-          <button type="button" class="btn btn-outline" id="toggleSpyBtn">👁️ Ver Gabarito (Espião)</button>
-          <button type="button" class="btn btn-outline" id="lockBoardBtn">🔒 Travar Tabuleiro</button>
-          <button type="button" class="btn btn-success" id="revealBtn">✨ Revelar Cartas</button>
-          <button type="button" class="btn btn-danger-outline" id="resetRoomBtn">🗑️ Resetar Sala</button>
+    <section class="panel-card host-control-card" aria-labelledby="roomTitleDisplay">
+      <div class="section-heading host-heading">
+        <div class="heading-copy">
+          <p class="eyebrow">PAINEL DA RODADA</p>
+          <div class="title-line">
+            <h2 id="roomTitleDisplay">Controle da SALA-1</h2>
+            <span class="badge badge-status waiting" id="roomStatusBadge" role="status">Aguardando início</span>
+          </div>
+          <p class="section-description">Prepare a rodada, acompanhe os participantes e revele o resultado no momento certo.</p>
+        </div>
+        <div class="host-actions" aria-label="Ações da rodada">
+          <button type="button" class="btn btn-secondary" id="toggleSpyBtn" aria-pressed="false">◉ Ver gabarito</button>
+          <button type="button" class="btn btn-secondary" id="lockBoardBtn" disabled>Travar tabuleiro</button>
+          <button type="button" class="btn btn-primary" id="revealBtn" disabled>Revelar cartas</button>
+          <button type="button" class="btn btn-answer" id="showAnswerKeyBtn" hidden>Ver sequência correta</button>
+          <button type="button" class="btn btn-danger-quiet" id="resetRoomBtn">Resetar sala</button>
         </div>
       </div>
 
-      <div class="host-controls-grid">
-        <div class="form-group">
-          <label for="cardCountInput">Quantidade de Cartas na Sala (2 a 30)</label>
-          <input type="number" id="cardCountInput" min="2" max="30" value="10" />
+      <div class="setup-grid">
+        <div class="setup-field">
+          <label for="cardCountInput">Quantidade de cartas</label>
+          <div class="input-with-suffix">
+            <input type="number" id="cardCountInput" min="2" max="30" value="10" inputmode="numeric" />
+            <span>de 2 a 30</span>
+          </div>
+          <p class="field-help">Defina quantas imagens farão parte da sequência.</p>
         </div>
 
-        <button type="button" class="btn btn-accent" id="startGameBtn">
-          🃏 Sortear e Distribuir Cartas
+        <button type="button" class="btn btn-start" id="startGameBtn">
+          <span class="btn-icon" aria-hidden="true">↗</span>
+          <span><strong>Sortear e distribuir</strong><small>Iniciar uma nova rodada</small></span>
         </button>
 
-        <div class="share-box">
-          <strong>Link da Sala:</strong>
-          <code id="playerLinkCode">sala-1.html</code>
-          <button type="button" class="btn btn-outline btn-sm" id="copyLinkBtn">📋 Copiar</button>
-          <a href="sala-1.html" target="_blank" class="btn btn-primary btn-sm" id="openPlayerTabBtn">
-            Abrir Sala ↗
-          </a>
+        <div class="share-panel">
+          <div class="share-copy">
+            <span class="share-label">LINK PARA OS PARTICIPANTES</span>
+            <code id="playerLinkCode">sala-1.html</code>
+          </div>
+          <button type="button" class="btn btn-secondary btn-small" id="copyLinkBtn">Copiar link</button>
+          <a href="sala-1.html" target="_blank" rel="noopener" class="btn btn-dark btn-small" id="openPlayerTabBtn">Abrir sala ↗</a>
         </div>
       </div>
 
-      <div class="roster-section">
-        <div class="roster-header">
-          <span>Participantes Conectados</span>
-          <span id="placementProgressText">0/10 posicionados</span>
+      <div class="participants-section">
+        <div class="participants-heading">
+          <div>
+            <h3>Participantes</h3>
+            <p class="section-description">Quem já entrou na sala e em qual posição está.</p>
+          </div>
+          <div class="participants-metrics">
+            <span class="metric-pill" id="playersCountBadge">0 participantes</span>
+            <span class="progress-copy" id="placementProgressText">0 de 10 posições preenchidas</span>
+          </div>
         </div>
-        <div class="roster-list" id="playersRoster"></div>
+        <div class="progress-track" aria-hidden="true"><span id="placementProgressBar"></span></div>
+        <div class="roster-list" id="playersRoster" aria-live="polite">
+          <p class="empty-roster">Aguardando os participantes entrarem na sala.</p>
+        </div>
       </div>
     </section>
 
-    <section class="card">
-      <div class="card-header">
-        <div class="card-title-group">
-          <h2 class="card-title">Tabuleiro da Sala</h2>
-          <p class="card-subtitle">Clique em qualquer carta visível para ampliá-la em tela cheia.</p>
+    <section class="panel-card board-panel" aria-labelledby="boardTitle">
+      <div class="section-heading board-heading">
+        <div>
+          <p class="eyebrow">ACOMPANHAMENTO EM TEMPO REAL</p>
+          <h2 id="boardTitle">Tabuleiro da equipe</h2>
+          <p class="section-description">As posições aparecem na ordem em que a equipe está construindo a sequência.</p>
         </div>
-        <div id="scoreSummaryBadge"></div>
+        <div id="scoreSummaryBadge" aria-live="polite"></div>
       </div>
 
-      <div class="zoom-scale-bar">
-        <div class="scale-end">🔍 <span>Posição #1 • Detalhe Mais Próximo (Zoom In)</span></div>
-        <div class="scale-line"></div>
-        <div class="scale-end"><span>Última Posição • Visão Mais Ampla (Zoom Out)</span> 🌍</div>
+      <div class="zoom-scale-bar" aria-label="Escala: do detalhe mais próximo à visão mais ampla">
+        <div class="scale-end"><span class="scale-symbol">🔍</span><span><strong>ZOOM IN</strong><small>Detalhe mais próximo</small></span></div>
+        <div class="scale-line"><span></span></div>
+        <div class="scale-end scale-end-right"><span><strong>ZOOM OUT</strong><small>Visão mais ampla</small></span><span class="scale-symbol">◎</span></div>
       </div>
 
-      <div class="timeline-grid" id="hostTimelineGrid"></div>
+      <div class="timeline-grid" id="hostTimelineGrid" aria-live="polite"></div>
     </section>
+
+    <footer class="page-footer">ENCONTRO DOS INSTRUTORES <span>•</span> Aprender também é mudar a perspectiva.</footer>
   </main>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <div class="modal-backdrop" id="answerKeyModal" hidden aria-hidden="true">
+    <section class="answer-modal" role="dialog" aria-modal="true" aria-labelledby="answerKeyTitle" aria-describedby="answerKeyDescription" tabindex="-1">
+      <header class="answer-modal-header">
+        <div>
+          <p class="eyebrow">GABARITO COMPLETO</p>
+          <h2 id="answerKeyTitle">A sequência correta</h2>
+          <p id="answerKeyDescription">Veja todas as imagens na ordem de referência, do maior nível de detalhe até a visão mais ampla.</p>
+        </div>
+        <button type="button" class="modal-close" id="closeAnswerKeyBtn" aria-label="Fechar sequência correta">×</button>
+      </header>
+      <div class="answer-key-direction">
+        <span>🔍 <strong>ZOOM IN</strong> · detalhe</span>
+        <span class="direction-rule" aria-hidden="true"></span>
+        <span><strong>ZOOM OUT</strong> · visão ampla ◎</span>
+      </div>
+      <div class="answer-key-meta" id="answerKeyMeta"></div>
+      <div class="answer-key-grid" id="answerKeyGrid"></div>
+      <footer class="answer-modal-footer">
+        <p>Use esta sequência para fechar a dinâmica e conversar sobre os diferentes níveis de observação.</p>
+        <button type="button" class="btn btn-primary" id="closeAnswerKeyFooterBtn">Fechar quadro</button>
+      </footer>
+    </section>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script src="js/config.js"></script>
   <script src="js/store.js"></script>
   <script src="js/host.js"></script>

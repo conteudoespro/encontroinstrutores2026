@@ -1,0 +1,32 @@
+ZOOM IN, ZOOM OUT — ENCONTRO DOS INSTRUTORES
+
+ARQUIVOS
+- index.html: painel do facilitador
+- sala-1.html até sala-4.html: páginas dos participantes
+- css/style.css: identidade visual e responsividade
+- js/config.js: configuração do baralho e configuração Firebase original
+- js/store.js: persistência e sincronização Firebase original
+- js/host.js: lógica do facilitador e quadro de sequência correta
+- js/player.js: lógica dos participantes
+
+COMO PUBLICAR
+1. Faça uma cópia/backup do repositório atual.
+2. Substitua os arquivos HTML, CSS e JS pelos arquivos deste pacote, mantendo a estrutura de pastas indicada.
+3. Mantenha sua pasta original `cartas/` no mesmo nível de `index.html`.
+4. Confirme que as imagens estão nomeadas de 01.jpg até a quantidade configurada em js/config.js (máximo 30).
+5. Publique normalmente pelo GitHub Pages.
+
+FIREBASE
+- A configuração do projeto em js/config.js foi preservada.
+- O js/store.js foi mantido com a mesma estrutura de persistência.
+- O caminho do Realtime Database continua sendo `rooms/{roomId}`.
+- Os campos usados no estado continuam os mesmos: roomId, totalCards, status, locked, timerEndsAt, players e updatedAt; cada participante continua usando id, name, cardNumber e slotIndex.
+- Nenhum dado já armazenado no Firebase precisa ser migrado ou alterado.
+
+NOVA FUNÇÃO
+Depois de revelar as cartas, o botão “Ver sequência correta” abre um quadro ampliado com todas as cartas do baralho da rodada, ordenadas pela numeração oficial (1 até totalCards). A função usa os arquivos existentes na pasta `cartas/` e não depende das posições que os participantes conseguiram preencher.
+
+OBSERVAÇÕES
+- O quadro correto usa a ordem numérica do baralho, conforme a regra de pontuação já existente no jogo (cardNumber deve corresponder a slotIndex + 1).
+- As regras de segurança e permissões do Firebase não foram modificadas.
+- Não foram incluídas imagens de cartas neste pacote porque elas não estavam entre os arquivos enviados. Preserve a sua pasta `cartas/` original.

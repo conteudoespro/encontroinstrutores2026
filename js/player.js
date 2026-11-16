@@ -3,231 +3,335 @@ const store = new RoomStore(ROOM_ID);
 
 let playerId = sessionStorage.getItem(`zoom_pid_${ROOM_ID}`);
 if (!playerId) {
-  playerId = 'p_' + Math.random().toString(36).substring(2, 10);
+  playerId = `p_${Math.random().toString(36).slice(2, 10)}`;
   sessionStorage.setItem(`zoom_pid_${ROOM_ID}`, playerId);
 }
 
 let shieldActive = false;
+let lastCardNumber = null;
+const byId = (id) => document.getElementById(id);
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('roomBadge').textContent = ROOM_ID.toUpperCase();
+  byId('roomBadge').textContent = ROOM_ID.toUpperCase();
+  initPlayerControls();
+  store.subscribe(renderPlayerView);
+});
 
-  // Entrar na sala
-  document.getElementById('joinForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = document.getElementById('playerNameInput').value.trim();
-    if (!name) return;
+function initPlayerControls() {
+  byId('joinForm').addEventListener('submit', joinRoom);
 
+  byId('toggleShieldBtn').addEventListener('click', () => {
+    shieldActive = !shieldActive;
+    updateShieldUI();
+  });
+
+  const secretImage = byId('secretCardImg');
+  secretImage.addEventListener('click', () => {
+    if (!shieldActive && secretImage.src) openImageLightbox(secretImage.src, 'Sua imagem secreta');
+  });
+  secretImage.addEventListener('keydown', (event) => {
+    if ((event.key === 'Enter' || event.key === ' ') && !shieldActive) {
+      event.preventDefault();
+      if (secretImage.src) openImageLightbox(secretImage.src, 'Sua imagem secreta');
+    }
+  });
+
+  byId('leaveRoomBtn').addEventListener('click', leaveRoom);
+}
+
+async function joinRoom(event) {
+  event.preventDefault();
+  const input = byId('playerNameInput');
+  const submitButton = byId('joinSubmitBtn');
+  const name = input.value.trim();
+  if (!name) {
+    input.focus();
+    return;
+  }
+
+  submitButton.disabled = true;
+  submitButton.textContent = 'Entrando...';
+  try {
     await store.updateState((state) => {
       if (!state.players) state.players = {};
 
       let assignedCard = null;
       if (state.status === 'playing') {
-        const usedCards = new Set(Object.values(state.players).map((p) => p.cardNumber).filter(Boolean));
-        const available = [];
-        for (let c = 1; c <= state.totalCards; c++) {
-          if (!usedCards.has(c)) available.push(c);
+        // Não considera uma eventual entrada anterior do mesmo navegador como carta ocupada.
+        const usedCards = new Set(
+          Object.values(state.players)
+            .filter((player) => player.id !== playerId)
+            .map((player) => player.cardNumber)
+            .filter((number) => Number.isInteger(number))
+        );
+        const availableCards = [];
+        for (let cardNumber = 1; cardNumber <= state.totalCards; cardNumber += 1) {
+          if (!usedCards.has(cardNumber)) availableCards.push(cardNumber);
         }
-        if (available.length > 0) {
-          assignedCard = available[Math.floor(Math.random() * available.length)];
+        if (availableCards.length > 0) {
+          assignedCard = availableCards[Math.floor(Math.random() * availableCards.length)];
         }
       }
 
+      const previousPlayer = state.players[playerId];
       state.players[playerId] = {
         id: playerId,
         name,
-        cardNumber: assignedCard,
-        slotIndex: null
+        cardNumber: previousPlayer?.cardNumber ?? assignedCard,
+        slotIndex: previousPlayer?.slotIndex ?? null
       };
       return state;
     });
-  });
-
-  // Botão de proteger tela (ocultar carta secreta)
-  document.getElementById('toggleShieldBtn').addEventListener('click', () => {
-    shieldActive = !shieldActive;
-    const frame = document.getElementById('secretImageFrame');
-    frame.classList.toggle('hidden-shield', shieldActive);
-    document.getElementById('toggleShieldBtn').textContent = shieldActive
-      ? '👁️ Mostrar Minha Carta'
-      : '🙈 Ocultar Minha Carta';
-  });
-
-  // Ampliar carta secreta ao clicar (se não estiver oculta pelo escudo)
-  document.getElementById('secretCardImg').addEventListener('click', (e) => {
-    if (!shieldActive && e.target.src) {
-      openImageLightbox(e.target.src, 'Sua Imagem Secreta');
-    }
-  });
-
-  // Botão para sair / trocar nome
-  const leaveBtn = document.getElementById('leaveRoomBtn');
-  if (leaveBtn) {
-    leaveBtn.addEventListener('click', async () => {
-      await store.updateState((state) => {
-        if (state.players && state.players[playerId]) {
-          delete state.players[playerId];
-        }
-        return state;
-      });
-    });
+  } catch (error) {
+    console.error('Não foi possível entrar na sala:', error);
+    showToast('Não foi possível entrar na sala. Verifique a conexão e tente novamente.');
+  } finally {
+    submitButton.disabled = false;
+    submitButton.innerHTML = 'Entrar na sala <span aria-hidden="true">→</span>';
   }
+}
 
-  store.subscribe(renderPlayerView);
-});
+async function leaveRoom() {
+  try {
+    await store.updateState((state) => {
+      if (state.players && state.players[playerId]) delete state.players[playerId];
+      return state;
+    });
+    shieldActive = false;
+    lastCardNumber = null;
+    updateShieldUI();
+  } catch (error) {
+    console.error('Não foi possível sair da sala:', error);
+    showToast('Não foi possível sair da sala. Verifique a conexão.');
+  }
+}
 
 function renderPlayerView(state) {
   const me = state.players ? state.players[playerId] : null;
-  const joinScreen = document.getElementById('joinScreen');
-  const gameScreen = document.getElementById('gameScreen');
-  const headerRight = document.getElementById('playerHeaderRight');
+  const joinScreen = byId('joinScreen');
+  const gameScreen = byId('gameScreen');
+  const headerRight = byId('playerHeaderRight');
 
   if (!me) {
-    joinScreen.style.display = 'block';
-    gameScreen.style.display = 'none';
-    if (headerRight) headerRight.style.display = 'none';
+    joinScreen.hidden = false;
+    gameScreen.hidden = true;
+    headerRight.hidden = true;
     return;
   }
 
-  joinScreen.style.display = 'none';
-  gameScreen.style.display = 'grid';
-  if (headerRight) headerRight.style.display = 'flex';
-  document.getElementById('playerNameHeader').textContent = `👤 ${me.name}`;
+  joinScreen.hidden = true;
+  gameScreen.hidden = false;
+  headerRight.hidden = false;
+  byId('playerNameHeader').textContent = `● ${me.name || 'Participante'}`;
 
-  // Banner de estado do tabuleiro (Travado / Revelado)
-  const bannerEl = document.getElementById('boardStatusBanner');
-  if (bannerEl) {
-    if (state.status === 'revealed') {
-      const playersList = Object.values(state.players || {});
-      const correctCount = playersList.filter((p) => p.slotIndex !== null && p.cardNumber === p.slotIndex + 1).length;
-      bannerEl.className = 'status-banner revealed';
-      bannerEl.style.display = 'flex';
-      bannerEl.innerHTML = `
-        <span>✨ Cartas reveladas pelo facilitador!</span>
-        <span>Pontuação da equipe: ${correctCount} de ${state.totalCards} corretas</span>
-      `;
-    } else if (state.locked) {
-      bannerEl.className = 'status-banner locked';
-      bannerEl.style.display = 'flex';
-      bannerEl.innerHTML = `<span>🔒 O facilitador travou o tabuleiro. As posições não podem ser alteradas no momento.</span>`;
-    } else {
-      bannerEl.style.display = 'none';
-    }
+  renderPlayerStatus(state);
+  renderSecretCard(me, state);
+  renderPlayerBoard(state, me);
+}
+
+function renderPlayerStatus(state) {
+  const banner = byId('boardStatusBanner');
+  banner.replaceChildren();
+  banner.className = 'status-banner';
+
+  if (state.status === 'revealed') {
+    const players = Object.values(state.players || {});
+    const correctCount = players.filter((player) => hasSlot(player.slotIndex) && player.cardNumber === player.slotIndex + 1).length;
+    banner.classList.add('revealed');
+    const title = document.createElement('strong');
+    title.textContent = '✓ Cartas reveladas pelo facilitador';
+    const score = document.createElement('span');
+    score.textContent = `Pontuação da equipe: ${correctCount} de ${state.totalCards}`;
+    banner.append(title, score);
+    banner.hidden = false;
+  } else if (state.locked) {
+    banner.classList.add('locked');
+    banner.textContent = 'Tabuleiro travado pelo facilitador. As posições não podem ser alteradas neste momento.';
+    banner.hidden = false;
+  } else {
+    banner.hidden = true;
   }
+}
 
-  // Atualiza painel da Carta Secreta
-  const secretImg = document.getElementById('secretCardImg');
-  const secretFrame = document.getElementById('secretImageFrame');
-  const secretStatus = document.getElementById('secretCardStatus');
-  const toggleShieldBtn = document.getElementById('toggleShieldBtn');
+function renderSecretCard(me, state) {
+  const frame = byId('secretImageFrame');
+  const image = byId('secretCardImg');
+  const status = byId('secretCardStatus');
+  const shieldButton = byId('toggleShieldBtn');
 
   if (me.cardNumber) {
-    secretFrame.style.display = 'block';
-    toggleShieldBtn.style.display = 'inline-flex';
-    secretImg.src = DECK_CONFIG.getCardUrl(me.cardNumber);
-    secretImg.onerror = () => {
-      secretImg.src = `https://placehold.co/400x400/0f172a/ffffff?text=Carta+Secreta`;
-    };
-    secretStatus.textContent = me.slotIndex !== null
-      ? `Sua carta está na Posição #${me.slotIndex + 1}. Converse com a equipe para validar a ordem!`
-      : 'Descreva os detalhes da sua imagem sem mostrar a tela e escolha uma posição ao lado.';
-  } else {
-    secretFrame.style.display = 'none';
-    toggleShieldBtn.style.display = 'none';
-    secretStatus.textContent = state.status === 'waiting'
-      ? '⏳ Aguardando o facilitador iniciar a rodada e distribuir as cartas...'
-      : 'Todas as cartas desta rodada já foram distribuídas.';
-  }
+    frame.hidden = false;
+    shieldButton.hidden = false;
+    if (lastCardNumber !== me.cardNumber) {
+      lastCardNumber = me.cardNumber;
+      image.src = DECK_CONFIG.getCardUrl(me.cardNumber);
+      image.onerror = () => setFallbackImage(image, 'Sua carta');
+    }
 
-  // Renderiza o tabuleiro compartilhado da sala
-  const grid = document.getElementById('playerTimelineGrid');
-  grid.innerHTML = '';
-  const playersList = Object.values(state.players || {});
+    status.textContent = hasSlot(me.slotIndex)
+      ? `Sua imagem está na posição ${me.slotIndex + 1}. Converse com a equipe para validar a sequência.`
+      : 'Descreva o que você observa sem mostrar a tela. Depois, escolha uma posição no tabuleiro.';
+  } else {
+    frame.hidden = true;
+    shieldButton.hidden = true;
+    lastCardNumber = null;
+    status.textContent = state.status === 'waiting'
+      ? 'Aguardando o facilitador iniciar a rodada e distribuir as imagens.'
+      : state.status === 'revealed'
+        ? 'A rodada foi encerrada. Acompanhe a sequência construída pela equipe.'
+        : 'Todas as imagens disponíveis já foram distribuídas. Acompanhe a equipe.';
+  }
+  updateShieldUI();
+}
+
+function updateShieldUI() {
+  const frame = byId('secretImageFrame');
+  const button = byId('toggleShieldBtn');
+  frame.classList.toggle('hidden-shield', shieldActive);
+  button.textContent = shieldActive ? 'Mostrar minha imagem' : '🙈 Ocultar minha imagem';
+  button.setAttribute('aria-pressed', String(shieldActive));
+}
+
+function renderPlayerBoard(state, me) {
+  const grid = byId('playerTimelineGrid');
+  grid.replaceChildren();
+  const players = Object.values(state.players || {});
+  const totalCards = Math.max(2, Math.min(30, Number(state.totalCards) || 10));
   const isRevealed = state.status === 'revealed';
 
-  for (let i = 0; i < state.totalCards; i++) {
-    const occupant = playersList.find((p) => p.slotIndex === i);
-    const isMine = occupant && occupant.id === playerId;
-    const isCorrect = isRevealed && occupant && occupant.cardNumber === i + 1;
-    const isWrong = isRevealed && occupant && occupant.cardNumber !== i + 1;
+  for (let index = 0; index < totalCards; index += 1) {
+    const occupant = players.find((player) => player.slotIndex === index);
+    const isMine = Boolean(occupant && occupant.id === playerId);
+    const isCorrect = Boolean(isRevealed && occupant && occupant.cardNumber === index + 1);
+    const isWrong = Boolean(isRevealed && occupant && occupant.cardNumber !== index + 1);
 
-    const slot = document.createElement('div');
-    slot.className = `slot-card ${occupant ? 'occupied' : ''} ${isMine ? 'is-mine' : ''} ${isCorrect ? 'correct' : ''} ${isWrong ? 'wrong' : ''}`;
+    const slot = document.createElement('article');
+    slot.className = `slot-card${occupant ? ' occupied' : ''}${isMine ? ' is-mine' : ''}${isCorrect ? ' correct' : ''}${isWrong ? ' wrong' : ''}`;
+    slot.appendChild(createSlotHeader(index, isRevealed && occupant ? (isCorrect ? '✓ Correta' : `Era #${occupant.cardNumber}`) : ''));
 
-    let previewClass = 'slot-preview empty-preview';
-    let bodyHtml = `<span class="card-subtitle">Posição livre</span>`;
-
+    const preview = document.createElement('div');
+    preview.className = `slot-preview${occupant ? '' : ' empty-preview'}`;
     if (occupant) {
-      previewClass = 'slot-preview';
       if (isRevealed && occupant.cardNumber) {
-        bodyHtml = `
-          <img src="${DECK_CONFIG.getCardUrl(occupant.cardNumber)}" alt="Carta ${occupant.cardNumber}"
-               onclick="openImageLightbox(this.src, 'Posição ${i + 1} — Carta #${occupant.cardNumber}')"
-               onerror="this.src='https://placehold.co/300x300/0f172a/ffffff?text=Carta+${occupant.cardNumber}'">
-        `;
+        preview.appendChild(createZoomableImage(DECK_CONFIG.getCardUrl(occupant.cardNumber), `Carta ${occupant.cardNumber}`));
       } else {
-        bodyHtml = `
-          <div class="card-back ${isMine ? 'mine' : ''}">
-            <span>${isMine ? 'SUA CARTA' : 'CARTA SECRETA'}</span>
-            <small style="opacity:0.85; font-weight:400; margin-top:4px;">${isMine ? 'Posicionada aqui' : 'Oculta'}</small>
-          </div>
-        `;
+        preview.appendChild(createCardBack(isMine ? 'SUA IMAGEM' : 'IMAGEM SECRETA', isMine ? 'Você está aqui' : 'Oculta até a revelação', isMine));
       }
+    } else {
+      const label = document.createElement('span');
+      label.className = 'slot-empty-label';
+      label.textContent = 'Posição livre';
+      preview.appendChild(label);
     }
+    slot.appendChild(preview);
 
-    let actionBtn = '';
+    const playerName = document.createElement('div');
+    playerName.className = 'slot-player-name';
+    playerName.textContent = occupant ? `● ${occupant.name || 'Participante'}` : 'Aguardando participante';
+    slot.appendChild(playerName);
+
     if (!isRevealed && !state.locked && me.cardNumber) {
-      if (isMine) {
-        actionBtn = `<button type="button" class="btn btn-outline btn-sm btn-block" onclick="claimSlot(null)">Remover daqui</button>`;
-      } else {
-        actionBtn = `<button type="button" class="btn ${occupant ? 'btn-outline' : 'btn-primary'} btn-sm btn-block" onclick="claimSlot(${i})">${occupant ? '⇄ Trocar posição' : 'Colocar aqui'}</button>`;
-      }
+      const actionWrapper = document.createElement('div');
+      actionWrapper.className = 'slot-action';
+      const actionButton = document.createElement('button');
+      actionButton.type = 'button';
+      actionButton.className = `btn btn-block ${isMine || !occupant ? 'btn-primary' : 'btn-secondary'}`;
+      actionButton.textContent = isMine ? 'Remover daqui' : occupant ? 'Trocar posição' : 'Colocar aqui';
+      actionButton.addEventListener('click', () => claimSlot(isMine ? null : index, actionButton));
+      actionWrapper.appendChild(actionButton);
+      slot.appendChild(actionWrapper);
     }
 
-    let statusBadge = '';
-    if (isRevealed && occupant) {
-      statusBadge = `<span class="slot-hint-tag" style="color:${isCorrect ? 'var(--success)' : 'var(--danger)'}">${isCorrect ? '✅ Correta' : `❌ Era #${occupant.cardNumber}`}</span>`;
-    }
-
-    slot.innerHTML = `
-      <div class="slot-header">
-        <span class="slot-index-badge">POSIÇÃO ${i + 1}</span>
-        ${statusBadge}
-      </div>
-      <div class="${previewClass}">${bodyHtml}</div>
-      <div class="slot-player-name">
-        ${occupant ? `👤 ${escapeHtml(occupant.name)}` : '—'}
-      </div>
-      ${actionBtn}
-    `;
     grid.appendChild(slot);
   }
 }
 
-window.claimSlot = async function (targetIndex) {
-  await store.updateState((state) => {
-    if (state.locked || state.status === 'revealed') return state;
-    const me = state.players[playerId];
-    if (!me) return state;
+function createSlotHeader(index, statusText) {
+  const header = document.createElement('div');
+  header.className = 'slot-header';
+  const label = document.createElement('span');
+  label.className = 'slot-index-badge';
+  label.textContent = `POSIÇÃO ${String(index + 1).padStart(2, '0')}`;
+  header.appendChild(label);
+  if (statusText) {
+    const status = document.createElement('span');
+    status.className = 'slot-hint-tag';
+    status.textContent = statusText;
+    status.style.color = statusText.includes('Correta') ? 'var(--green)' : 'var(--red)';
+    header.appendChild(status);
+  }
+  return header;
+}
 
-    const previousSlot = me.slotIndex;
-    const otherPlayer = Object.values(state.players).find((p) => p.slotIndex === targetIndex && p.id !== playerId);
+function createCardBack(title, subtitle, mine = false) {
+  const back = document.createElement('div');
+  back.className = `card-back${mine ? ' mine' : ''}`;
+  const heading = document.createElement('span');
+  heading.textContent = title;
+  const detail = document.createElement('small');
+  detail.textContent = subtitle;
+  back.append(heading, detail);
+  return back;
+}
 
-    if (otherPlayer && targetIndex !== null) {
-      otherPlayer.slotIndex = previousSlot;
-    }
+function createZoomableImage(src, altText) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'image-zoom-button';
+  button.setAttribute('aria-label', `Ampliar ${altText}`);
+  const image = document.createElement('img');
+  image.src = src;
+  image.alt = altText;
+  image.loading = 'lazy';
+  image.onerror = () => setFallbackImage(image, altText);
+  button.appendChild(image);
+  button.addEventListener('click', () => openImageLightbox(image.src, altText));
+  return button;
+}
 
-    me.slotIndex = targetIndex;
-    return state;
-  });
-};
+function setFallbackImage(image, label) {
+  image.onerror = null;
+  image.src = `https://placehold.co/500x500/17283e/ffffff?text=${encodeURIComponent(label || 'Imagem indisponivel')}`;
+}
 
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, (m) => ({
+async function claimSlot(targetIndex, button) {
+  if (button) button.disabled = true;
+  try {
+    await store.updateState((state) => {
+      if (state.locked || state.status === 'revealed') return state;
+      if (!state.players || !state.players[playerId]) return state;
+      if (targetIndex !== null && (!Number.isInteger(targetIndex) || targetIndex < 0 || targetIndex >= state.totalCards)) return state;
+
+      const me = state.players[playerId];
+      const previousSlot = me.slotIndex;
+      if (targetIndex === null) {
+        me.slotIndex = null;
+        return state;
+      }
+
+      const otherPlayer = Object.values(state.players).find((player) => player.slotIndex === targetIndex && player.id !== playerId);
+      if (otherPlayer) otherPlayer.slotIndex = hasSlot(previousSlot) ? previousSlot : null;
+      me.slotIndex = targetIndex;
+      return state;
+    });
+  } catch (error) {
+    console.error('Não foi possível atualizar a posição:', error);
+    showToast('Não foi possível atualizar sua posição. Verifique a conexão.');
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+function hasSlot(slotIndex) {
+  return slotIndex !== null && slotIndex !== undefined;
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
     "'": '&#39;'
-  }[m]));
+  })[character]);
 }

@@ -3,75 +3,94 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sala 3 — Zoom In, Zoom Out</title>
+  <meta name="theme-color" content="#142338" />
+  <meta name="description" content="Sala 3 da dinâmica Zoom In, Zoom Out — Encontro dos Instrutores." />
+  <title>Sala 3 | Zoom In, Zoom Out — Encontro dos Instrutores</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body data-room="sala-3">
-  <header class="topbar">
-    <div class="brand">
-      <span>🔍 Zoom In, Zoom Out</span>
+<body class="player-page" data-room="sala-3">
+  <header class="topbar player-topbar">
+    <a class="brand" href="index.html" aria-label="Zoom In, Zoom Out — Encontro dos Instrutores">
+      <span class="brand-mark" aria-hidden="true">🔍</span>
+      <span class="brand-copy">
+        <span class="brand-event">ENCONTRO DOS INSTRUTORES</span>
+        <span class="brand-name">Zoom In, Zoom Out</span>
+      </span>
       <span class="badge badge-accent" id="roomBadge">SALA-3</span>
-    </div>
-    <div class="topbar-right" id="playerHeaderRight" style="display:none;">
-      <span class="player-Chip" id="playerNameHeader"></span>
+    </a>
+    <div class="topbar-right" id="playerHeaderRight" hidden>
+      <span class="player-chip" id="playerNameHeader"></span>
       <button type="button" class="btn btn-ghost-light" id="leaveRoomBtn" title="Trocar de nome ou sair">Sair</button>
     </div>
   </header>
 
-  <main class="container">
-    <section class="card join-screen" id="joinScreen">
-      <div class="join-icon">🔍</div>
-      <h1 class="card-title">Bem-vindo à Sala 3</h1>
-      <p class="card-subtitle">
-        Digite seu nome para entrar na dinâmica e receber sua imagem secreta.
-      </p>
-      <form id="joinForm" class="join-form">
-        <input type="text" id="playerNameInput" placeholder="Como quer ser chamado?" required maxlength="25" autocomplete="off" />
-        <button type="submit" class="btn btn-accent btn-block">Entrar na Sala</button>
-      </form>
+  <main class="container player-container">
+    <section class="page-intro player-intro">
+      <div>
+        <p class="eyebrow">DINÂMICA COLABORATIVA</p>
+        <h1>Observe. Descreva. Construa junto.</h1>
+        <p class="intro-copy">Cada pessoa tem uma parte da imagem. A sequência completa depende da conversa de todo mundo.</p>
+      </div>
+      <div class="intro-mark" aria-hidden="true">◎</div>
     </section>
 
-    <div class="player-layout" id="gameScreen" style="display:none;">
-      <aside class="card secret-card-box">
-        <h2 class="card-title">Sua Imagem Secreta</h2>
-        <div class="secret-image-frame" id="secretImageFrame">
-          <img id="secretCardImg" src="" alt="Sua carta secreta" />
-          <span class="zoom-hint-pill">🔍 Clique para ampliar</span>
-          <div class="shield-overlay">
-            <span style="font-size:1.8rem;">🙈</span>
-            <span>Imagem oculta para proteger seu segredo</span>
+    <section class="panel-card join-screen" id="joinScreen">
+      <div class="join-icon" aria-hidden="true">🔍</div>
+      <p class="eyebrow">VOCÊ ESTÁ NA SALA 3</p>
+      <h2>Entre na dinâmica</h2>
+      <p class="join-description">Digite como gostaria de ser chamado. Quando o facilitador iniciar a rodada, você receberá uma imagem secreta.</p>
+      <form id="joinForm" class="join-form">
+        <label for="playerNameInput">Seu nome</label>
+        <input type="text" id="playerNameInput" placeholder="Como quer ser chamado?" required maxlength="25" autocomplete="name" />
+        <button type="submit" class="btn btn-primary btn-block" id="joinSubmitBtn">Entrar na sala <span aria-hidden="true">→</span></button>
+      </form>
+      <p class="join-note">Não mostre sua imagem aos outros participantes. Descreva o que você vê usando palavras.</p>
+    </section>
+
+    <div class="player-layout" id="gameScreen" hidden>
+      <aside class="panel-card secret-card-box">
+        <div class="secret-heading">
+          <p class="eyebrow">SUA MISSÃO</p>
+          <h2>Sua imagem secreta</h2>
+          <p class="section-description">Observe os detalhes e ajude a equipe com sua descrição.</p>
+        </div>
+        <div class="secret-image-frame" id="secretImageFrame" hidden>
+          <img id="secretCardImg" src="" alt="Sua imagem secreta" tabindex="0" role="button" aria-label="Ampliar sua imagem secreta" />
+          <span class="zoom-hint-pill">Ampliar imagem ↗</span>
+          <div class="shield-overlay" aria-hidden="true">
+            <span class="shield-emoji">🙈</span>
+            <span>Imagem protegida</span>
+            <small>Toque em mostrar para voltar a visualizar.</small>
           </div>
         </div>
-        <p id="secretCardStatus" class="card-subtitle" style="margin-bottom:1rem;"></p>
-        <button type="button" class="btn btn-outline btn-block" id="toggleShieldBtn">
-          🙈 Ocultar Minha Carta
-        </button>
+        <p id="secretCardStatus" class="secret-status" aria-live="polite">Aguardando o facilitador iniciar a rodada...</p>
+        <button type="button" class="btn btn-secondary btn-block" id="toggleShieldBtn" aria-pressed="false" hidden>🙈 Ocultar minha imagem</button>
+        <div class="privacy-note"><span aria-hidden="true">✦</span> Sua imagem é individual. Compartilhe apenas a descrição, não a tela.</div>
       </aside>
 
-      <section class="card">
-        <div id="boardStatusBanner" style="display:none;"></div>
-
-        <div class="card-header">
-          <div class="card-title-group">
-            <h2 class="card-title">Sequência da Equipe</h2>
-            <p class="card-subtitle">
-              Conversem entre si e ordenem as cartas da visão mais próxima (Posição 1) até a mais ampla.
-            </p>
+      <section class="panel-card player-board-panel" aria-labelledby="teamBoardTitle">
+        <div id="boardStatusBanner" class="status-banner" role="status" aria-live="polite" hidden></div>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">CONSTRUÇÃO COLETIVA</p>
+            <h2 id="teamBoardTitle">Sequência da equipe</h2>
+            <p class="section-description">Conversem e organizem as imagens da visão mais próxima até a mais ampla.</p>
           </div>
         </div>
-
-        <div class="zoom-scale-bar">
-          <div class="scale-end">🔍 <span>Posição #1 • Detalhe Mais Próximo (Zoom In)</span></div>
-          <div class="scale-line"></div>
-          <div class="scale-end"><span>Última Posição • Visão Mais Ampla (Zoom Out)</span> 🌍</div>
+        <div class="zoom-scale-bar" aria-label="Escala: do detalhe mais próximo à visão mais ampla">
+          <div class="scale-end"><span class="scale-symbol">🔍</span><span><strong>ZOOM IN</strong><small>Detalhe mais próximo</small></span></div>
+          <div class="scale-line"><span></span></div>
+          <div class="scale-end scale-end-right"><span><strong>ZOOM OUT</strong><small>Visão mais ampla</small></span><span class="scale-symbol">◎</span></div>
         </div>
-
-        <div class="timeline-grid" id="playerTimelineGrid"></div>
+        <div class="timeline-grid" id="playerTimelineGrid" aria-live="polite"></div>
       </section>
     </div>
+
+    <footer class="page-footer">ENCONTRO DOS INSTRUTORES <span>•</span> A sequência é construída em equipe.</footer>
   </main>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script src="js/config.js"></script>
   <script src="js/store.js"></script>
   <script src="js/player.js"></script>
